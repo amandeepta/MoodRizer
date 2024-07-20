@@ -14,9 +14,9 @@ const successAuth = async (req, res) => {
     const accessToken = user.accessToken;
 
     if (roomId) {
-      res.redirect(`/auth/join-room?roomId=${roomId}&accessToken=${accessToken}`);
+      res.redirect(`/join-room?roomId=${roomId}&accessToken=${accessToken}`);
     } else {
-      res.redirect(`/auth/create-room?accessToken=${accessToken}`);
+      res.redirect(`/create-room?accessToken=${accessToken}`);
     }
   } catch (error) {
     console.error('Error in authentication success handler:', error);

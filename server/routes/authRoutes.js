@@ -1,18 +1,18 @@
 const router = require("express").Router();
 const passport = require("passport");
 
-router.post('/spotify', passport.authenticate('spotify', {
+router.get('/spotify', passport.authenticate('spotify', {
   scope: ['user-read-email', 'user-read-private','user-read-playback-state'
   ],
   showDialog: true
 }));
 
-router.post('/spotify/callback', passport.authenticate('spotify', {
+router.get('/spotify/callback', passport.authenticate('spotify', {
   failureRedirect: '/',
-  successRedirect: '/success'
+  successRedirect: 'http://localhost:5173/main'
 }));
 
-router.post('/logout', (req, res) => {
+router.get('/logout', (req, res) => {
   req.logout();
   res.redirect("/");
 });

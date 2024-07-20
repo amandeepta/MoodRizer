@@ -1,22 +1,20 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import PromptForm from './PromptForm';
-import SongList from './SongList';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import MainPage from './components/Pages/MainPage';
+import RoomPage from './components/Pages/RoomPage';
+import JoinPage from './components/Pages/JoinPage';
+import AuthPage from './components/Pages/AuthPage'
 
-const App = () => {
-    const [songsData, setSongsData] = useState(null);
-
-    const handleGenerateSongs = (data) => {
-        setSongsData(data);
-    };
-
-    return (
-        <div>
-            <h1>Mood Music App</h1>
-            <PromptForm onGenerateSongs={handleGenerateSongs} />
-            {songsData && <SongList mood={songsData.mood} tracks={songsData.tracks} />}
-        </div>
-    );
-};
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<AuthPage />} />
+        <Route path="/main" element = {<MainPage/>} />
+        <Route path = "/join" element = {<JoinPage/>}/>
+        <Route path="/room/:roomId" element={<RoomPage />} />
+      </Routes>
+    </Router>
+  );
+}
 
 export default App;
