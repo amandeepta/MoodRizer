@@ -1,25 +1,34 @@
 const express = require('express');
 const http = require('http');
-const socketIo = require('socket.io');
+const { Server } = require('socket.io');
+const cors = require('cors');
+const passport = require('passport');
+const session = require('express-session');
 const connectDB = require('./config/db');
-const spotifyApi = require('./services/spotify');
-const routes = require('./routes');
-const socketHandlers = require('./sockets');
+const socketHandlers = require('./controllers/socket');
+require('./spotify');
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
-const {authRoutes} = require("./routes/authRoutes")
+const io = new Server(server);
 const port = process.env.PORT || 4000;
 
 app.use(cors());
 connectDB();
+app.use(express.json());
+
+app.use(session({
+  secret: process.env.SECRET,
+  resave: false,
+  saveUninitialized: true
+}));
 
 app.use(passport.initialize());
 app.use(passport.session());
-app.use('/', routes);
+
 app.use('/auth', authRoutes);
-app.use(express.json());
+
 socketHandlers(io);
 
 server.listen(port, () => console.log(`Server running on port ${port}`));

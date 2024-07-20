@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Room = require('../models/Room');
 const User = require('../models/User');
 const SpotifyWebApi = require('spotify-web-api-node');
+const axios = require('axios');
 const spotifyApi = new SpotifyWebApi();
 
 function generateRoomId() {
@@ -19,13 +20,8 @@ async function getActiveDevices(accessToken) {
   }
 }
 
-async function playSongOnDevice(accessToken, deviceId, songUrl) {
+async function playSongOnDevice(accessToken, deviceId, trackUri) {
   spotifyApi.setAccessToken(accessToken);
-  const trackId = extractTrackIdFromUrl(songUrl);
-  if (!trackId) {
-    throw new Error('Invalid song URL');
-  }
-  const trackUri = `spotify:track:${trackId}`;
   try {
     await spotifyApi.play({
       uris: [trackUri]
@@ -38,22 +34,30 @@ async function playSongOnDevice(accessToken, deviceId, songUrl) {
   }
 }
 
-function extractTrackIdFromUrl(url) {
-  const match = url.match(/track\/([^/?#&]*)/);
-  return match ? match[1] : null;
+async function searchSongByName(accessToken, songName) {
+  spotifyApi.setAccessToken(accessToken);
+  try {
+    const response = await spotifyApi.searchTracks(`track:${songName}`);
+    const track = response.body.tracks.items[0];
+    if (!track) {
+      throw new Error('Song not found');
+    }
+    return track.uri;
+  } catch (error) {
+    console.error('Error searching for song:', error);
+    throw error;
+  }
 }
 
 const socketHandler = (io) => {
   io.on('connection', async (socket) => {
     console.log('New client connected');
 
-    socket.on('createRoom', async (accessToken, callback) => {
-      if (!accessToken) {
-        return callback({ error: 'No access token provided' });
-      }
+    socket.on('createRoom', async (callback) => {
+      const spotifyId = req.user.spotifyId;
       
       try {
-        const user = await User.findOne({ accessToken });
+        const user = await User.findOne({ spotifyId});
         if (!user) {
           return callback({ success: false, message: 'User not authenticated' });
         }
@@ -67,6 +71,21 @@ const socketHandler = (io) => {
         
         const room = new Room({ roomId, users: [user.accessToken] });
         await room.save();
+
+        const userInfoResponse = await axios.get(`http://localhost:4000/fetch-info?accessToken=${accessToken}`);
+        const { displayName, profileImage, favoriteGenre, leastFavoriteGenre, favoriteArtist } = userInfoResponse.data;
+
+      io.to(socket.id).emit('userInfo', {
+        userInfo: {
+          displayName,
+          profileImage,
+          favoriteGenre,
+          leastFavoriteGenre,
+          favoriteArtist
+        },
+
+    });
+
         callback({ success: true, roomId });
       } catch (error) {
         console.error('Error creating room:', error);
@@ -74,13 +93,14 @@ const socketHandler = (io) => {
       }
     });
 
-    socket.on('joinRoom', async (roomId, accessToken, callback) => {
-      if (!roomId || !accessToken) {
+    socket.on('joinRoom', async (roomId, callback) => {
+      const spotifyId = req.user.spotifyId;
+      if (!roomId) {
         return callback({ error: 'Room ID or access token not provided' });
       }
 
       try {
-        const user = await User.findOne({ accessToken });
+        const user = await User.findOne({ spotifyId});
         if (!user) {
           return callback({ success: false, message: 'User not authenticated' });
         }
@@ -90,6 +110,20 @@ const socketHandler = (io) => {
           room.users.push(user.accessToken);
           await room.save();
           socket.join(roomId);
+
+          const userInfoResponse = await axios.get(`http://localhost:4000/fetch-info?accessToken=${accessToken}`);
+        const { displayName, profileImage, favoriteGenre, leastFavoriteGenre, favoriteArtist } = userInfoResponse.data;
+
+      io.to(socket.id).emit('userInfo', {
+        userInfo: {
+          displayName,
+          profileImage,
+          favoriteGenre,
+          leastFavoriteGenre,
+          favoriteArtist
+        },
+    });
+
           callback({ success: true });
         } else {
           callback({ success: false, message: 'Room not found' });
@@ -100,7 +134,7 @@ const socketHandler = (io) => {
       }
     });
 
-    socket.on('playSong', async (roomId, songUrl) => {
+    socket.on('playSong', async (roomId, songName) => {
       try {
         const room = await Room.findOne({ roomId }).populate('users');
         if (!room) {
@@ -109,18 +143,19 @@ const socketHandler = (io) => {
 
         for (const user of room.users) {
           const device = await getActiveDevices(user.accessToken);
-          await playSongOnDevice(user.accessToken, device, songUrl);
+          const trackUri = await searchSongByName(user.accessToken, songName);
+          await playSongOnDevice(user.accessToken, device, trackUri);
         }
 
-        io.in(roomId).emit('playSongSuccess', songUrl);
+        io.in(roomId).emit('playSongSuccess', songName);
       } catch (error) {
         console.error('Error playing song:', error);
         io.in(roomId).emit('playSongError', { error: 'Failed to play song' });
       }
     });
 
-    socket.on('disconnect', () => {
-      console.log('Client disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log('Client disconnected:', socket.id, 'Reason:', reason);
     });
   });
 };

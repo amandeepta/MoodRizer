@@ -2,20 +2,20 @@ const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
 const SpotifyStrategy = require('passport-spotify').Strategy;
-const User = require('../models/user');
-
+const User = require('./models/User');
+require("dotenv");
 const app = express();
 
 app.use(session({
-  secret: 'your_secret_key_here',
+  secret: process.env.SECRET,
   resave: false,
   saveUninitialized: false,
 }));
  
 passport.use(
   new SpotifyStrategy({
-    clientID: YOUR_CLIENT_ID,
-    clientSecret: YOUR_CLIENT_SECRET,
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
     callbackURL: 'http://localhost:4000/auth/spotify/callback'
   },
   async (accessToken, refreshToken, expires_in, profile, done) => {
