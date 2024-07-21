@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:4000'); // Assuming backend server at localhost:4000
+const socket = io('http://localhost:4000', {
+  transports: ['websocket'], // Ensures WebSocket transport is used
+  withCredentials: true // Allows credentials for CORS
+});
 
 function MainPage() {
   const navigate = useNavigate();
