@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+
 const Room = require('../models/Room');
 const User = require('../models/User');
 const SpotifyWebApi = require('spotify-web-api-node');
@@ -54,7 +54,8 @@ const socketHandler = (io) => {
     console.log('New client connected');
 
     socket.on('createRoom', async (callback) => {
-      const spotifyId = req.user.spotifyId;
+      const session = socket.request.session;
+      const spotifyId = session.passport.user;
       
       try {
         const user = await User.findOne({ spotifyId});
@@ -161,3 +162,4 @@ const socketHandler = (io) => {
 };
 
 module.exports = socketHandler;
+
