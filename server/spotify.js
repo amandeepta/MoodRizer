@@ -1,68 +1,77 @@
 const express = require('express');
-const session = require('express-session');
-const passport = require('passport');
-const SpotifyStrategy = require('passport-spotify').Strategy;
+const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const User = require('./models/User');
 const dotenv = require('dotenv');
 dotenv.config(); // Load environment variables from .env file
 
 const app = express();
 
-// Session middleware
-app.use(session({
-  secret: process.env.SECRET,
-  resave: false,
-  saveUninitialized: false,
-}));
+// Spotify authentication route
+app.get('/auth/spotify', async (req, res) => {
+  const clientId = process.env.CLIENT_ID;
+  const clientSecret = process.env.CLIENT_SECRET;
+  const redirectUri = 'http://localhost:4000/auth/spotify/callback';
+  const scopes = ['user-read-email', 'user-read-private', 'user-read-playback-state'];
 
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
+  const url = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scopes.join('%20')}&show_dialog=true`;
 
-// Passport configuration
-passport.use(
-  new SpotifyStrategy({
-    clientID: process.env.CLIENT_ID,
-    clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: 'http://localhost:4000/auth/spotify/callback'
-  },
-  async (accessToken, refreshToken, expires_in, profile, done) => {
-    try {
-      let user = await User.findOne({ spotifyId: profile.id });
-
-      if (!user) {
-        user = new User({
-          spotifyId: profile.id,
-          displayName: profile.displayName,
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-          expiresAt: new Date().getTime() + (expires_in * 1000) 
-        });
-        await user.save();
-      } else {
-        user.accessToken = accessToken;
-        user.refreshToken = refreshToken;
-        user.expiresAt = new Date().getTime() + (expires_in * 1000);
-        await user.save();
-      }
-
-      return done(null, user); // Pass the entire user object to serialize
-    } catch (err) {
-      return done(err);
-    }
-  })
-);
-
-// Serialize user into the session
-passport.serializeUser((user, done) => {
-  done(null, {spotifyId : user.spotifyId});
+  res.redirect(url);
 });
 
-passport.deserializeUser(async (spotifyId, done) => {
+// Spotify callback route
+app.get('/auth/spotify/callback', async (req, res) => {
+  const code = req.query.code;
+  const clientId = process.env.CLIENT_ID;
+  const clientSecret = process.env.CLIENT_SECRET;
+  const redirectUri = 'http://localhost:4000/auth/spotify/callback';
+
+  const tokenUrl = 'https://accounts.spotify.com/api/token';
+  const tokenData = {
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    client_secret: clientSecret,
+  };
+
   try {
-    const user = await User.findOne({ spotifyId });
-    done(null, user); // Deserialize user object
-  } catch (err) {
-    done(err);
+    const response = await axios.post(tokenUrl, tokenData);
+    const accessToken = response.data.access_token;
+    const refreshToken = response.data.refresh_token;
+    const expiresIn = response.data.expires_in;
+
+    // Get user profile
+    const userProfileUrl = 'https://api.spotify.com/v1/me';
+    const userProfileResponse = await axios.get(userProfileUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const user = userProfileResponse.data;
+
+    // Check if user exists in database
+    let dbUser = await User.findOne({ spotifyId: user.id });
+    if (!dbUser) {
+      dbUser = new User({
+        spotifyId: user.id,
+        displayName: user.display_name,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        expiresAt: new Date().getTime() + (expiresIn * 1000),
+      });
+      await dbUser.save();
+    } else {
+      dbUser.accessToken = accessToken;
+      dbUser.refreshToken = refreshToken;
+      dbUser.expiresAt = new Date().getTime() + (expiresIn * 1000);
+      await dbUser.save();
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ spotifyId: user.id }, process.env.SECRET, { expiresIn: '1h' });
+
+    res.redirect(`http://localhost:5173/main?token=${token}`);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error authenticating with Spotify');
   }
 });

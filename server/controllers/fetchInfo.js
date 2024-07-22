@@ -50,3 +50,9 @@ exports.fetchInfo = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user info from Spotify' });
   }
 };
+
+
+const fetchAccess = async(req, res) => {
+  const id = req.user.spotifyId;
+  
+}
