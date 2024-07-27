@@ -1,6 +1,6 @@
 
 const Room = require('../models/Room');
-const User = require('../models/User');
+
 const SpotifyWebApi = require('spotify-web-api-node');
 const axios = require('axios');
 const spotifyApi = new SpotifyWebApi();
@@ -53,16 +53,11 @@ const socketHandler = (io) => {
   io.on('connection', async (socket) => {
     console.log('New client connected');
 
-    socket.on('createRoom', async (callback) => {
-      const session = socket.request.session;
-      const spotifyId = session.passport.user;
-      
-      try {
-        const user = await User.findOne({ spotifyId});
-        if (!user) {
-          return callback({ success: false, message: 'User not authenticated' });
+    socket.on('createRoom', async (accessToken, callback) => {
+        if (!accessToken) {
+          res.redirect('./spotify/callback');
         }
-        
+        try {
         let roomId;
         do {
           roomId = generateRoomId();
@@ -94,17 +89,12 @@ const socketHandler = (io) => {
       }
     });
 
-    socket.on('joinRoom', async (roomId, callback) => {
-      const spotifyId = req.user.spotifyId;
-      if (!roomId) {
-        return callback({ error: 'Room ID or access token not provided' });
+    socket.on('joinRoom', async (accessToken, roomId, callback) => {
+      if (!accessToken) {
+        res.redirect('./spotify/callback');
       }
 
       try {
-        const user = await User.findOne({ spotifyId});
-        if (!user) {
-          return callback({ success: false, message: 'User not authenticated' });
-        }
 
         const room = await Room.findOne({ roomId });
         if (room) {
