@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
-import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const socket = io('http://localhost:4000', {
   transports: ['websocket'],
@@ -10,37 +10,30 @@ const socket = io('http://localhost:4000', {
 
 function MainPage() {
   const navigate = useNavigate();
-  const id = localStorage.getItem('spotifyId'); 
   const [accessToken, setAccessToken] = useState('');
   const [roomId, setRoomId] = useState('');
   console.log(roomId);
   const [socketConnected, setSocketConnected] = useState(false);
 
   useEffect(() => {
-    const fetchAccessToken = async () => {
-      try {
-        const response = await axios.get('http://localhost:4000/api/access', {
-          headers : {
-            id
-          }
-        });
-        setAccessToken(response.data.accessToken);
-      } catch (error) {
-        console.error('Error fetching access token:', error.message);
-      }
-    };
+    const token = Cookies.get('authToken');
+    localStorage.setItem('accessToken', token);
+    setAccessToken(token);
+  }, []);
 
-    fetchAccessToken();
+  useEffect(() => {
+    
+
+    if (!accessToken) return;
 
     socket.on('connect', () => {
-      console.log('Socket connected');
       setSocketConnected(true);
     });
 
     return () => {
       socket.off('connect');
     };
-  }, []);
+  }, [accessToken]);
 
   const handleCreateRoom = async () => {
     if (socketConnected) {
@@ -57,7 +50,6 @@ function MainPage() {
 
         if (response.success) {
           setRoomId(response.roomId);
-          console.log(`Created room with ID: ${response.roomId}`);
           navigate(`/room/${response.roomId}`);
         } else {
           console.error('Failed to create room:', response.message);

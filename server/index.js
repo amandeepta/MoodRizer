@@ -6,7 +6,7 @@ const connectDB = require('./config/db');
 const socketHandler = require('./controllers/socket');
 require('./spotify');
 const authRoutes = require('./routes/authRoutes');
-const getAccess = require('./routes/getAccess');
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -22,6 +22,5 @@ connectDB();
 app.use(express.json());
 
 app.use('/auth', authRoutes);
-app.use('/api', getAccess);
 socketHandler(io);
 server.listen(port, () => console.log(`Server running on port ${port}`));
