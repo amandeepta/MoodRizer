@@ -3,11 +3,15 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const User = require('./models/User');
 const dotenv = require('dotenv');
+const cookieParser = require('cookie-parser'); // Import cookie-parser
+
 dotenv.config(); // Load environment variables from .env file
 
 const app = express();
 
-// Spotify authentication route
+// Use cookie-parser middleware
+app.use(cookieParser());
+
 app.get('/auth/spotify', async (req, res) => {
   const clientId = process.env.CLIENT_ID;
   const clientSecret = process.env.CLIENT_SECRET;
@@ -66,10 +70,11 @@ app.get('/auth/spotify/callback', async (req, res) => {
       await dbUser.save();
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ spotifyId: user.id }, process.env.SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ accessToken: accessToken }, process.env.SECRET, { expiresIn: '1h' });
+    
+    res.cookie('authToken', token, { httpOnly: true, maxAge: 3600000 }); 
 
-    res.redirect(`http://localhost:5173/main?token=${token}`);
+    res.redirect('http://localhost:5173');
   } catch (error) {
     console.error(error);
     res.status(500).send('Error authenticating with Spotify');
