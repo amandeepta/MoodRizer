@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const User = require('./models/User');
 const dotenv = require('dotenv');
-const cookieParser = require('cookie-parser'); // Import cookie-parser
+ // Import cookie-parser
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -80,3 +80,6 @@ app.get('/auth/spotify/callback', async (req, res) => {
     res.status(500).send('Error authenticating with Spotify');
   }
 });
+
+
+module.exports = router;
