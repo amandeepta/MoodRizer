@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
-import Cookies from 'js-cookie';
+import axios from 'axios';
 
 const socket = io('http://localhost:4000', {
   transports: ['websocket'],
@@ -16,22 +17,22 @@ function MainPage() {
   const [socketConnected, setSocketConnected] = useState(false);
 
   useEffect(() => {
-    const token = Cookies.get('authToken');
-    localStorage.setItem('accessToken', token);
-    setAccessToken(token);
+    const accessToken = axios.get('http://localhost:4000/access/token');
+    setAccessToken(accessToken);
   }, []);
 
   useEffect(() => {
-    
-
-    if (!accessToken) return;
-
     socket.on('connect', () => {
       setSocketConnected(true);
     });
 
+    socket.on('disconnect', () => {
+      setSocketConnected(false);
+    });
+
     return () => {
       socket.off('connect');
+      socket.off('disconnect');
     };
   }, [accessToken]);
 

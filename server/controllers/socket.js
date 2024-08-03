@@ -31,17 +31,12 @@ const socketHandler = (io) => {
   io.on('connection', (socket) => {
     console.log('New client connected');
 
-    socket.on('createRoom', async (accessToken, callback) => {
+    socket.on('createRoom', async ( accessToken, callback) => {
       if (!accessToken) {
         return callback({ success: false, message: 'Access token is required. Redirecting to Spotify callback.' });
       }
 
       try {
-        const decoded = jwt.decode(accessToken, { complete: true });
-        if (!decoded) {
-          return callback({ success: false, message: 'Invalid access token. Redirecting to Spotify callback.' });
-        }
-
         let roomId;
         do {
           roomId = generateRoomId();
@@ -65,10 +60,7 @@ const socketHandler = (io) => {
       }
 
       try {
-        const decoded = jwt.decode(accessToken, { complete: true });
-        if (!decoded) {
-          return callback({ success: false, message: 'Invalid access token. Redirecting to Spotify callback.' });
-        }
+        
 
         const room = await Room.findOne({ roomId });
         if (room) {
@@ -86,7 +78,8 @@ const socketHandler = (io) => {
       }
     });
 
-    socket.on('populate', async (accessToken, callback) => {
+    socket.on('populate', async ( callback) => {
+      const accessToken = req.cookies.authToken;
       if (!accessToken) {
         return callback({ success: false, message: 'Access token is required. Redirecting to Spotify callback.' });
       }
