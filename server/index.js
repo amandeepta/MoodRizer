@@ -5,8 +5,7 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const socketHandler = require('./controllers/socket');
 const auth = require('./routes/authRoutes');
-
-
+const getAccess = require('./routes/getAccess');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -18,6 +17,7 @@ const io = socketIo(server, {
 const port = process.env.PORT || 4000;
 
 app.use(cors());
+app.use('/access', getAccess);
 connectDB();
 app.use(express.json());
 app.use(auth);
