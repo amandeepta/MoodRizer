@@ -1,21 +1,21 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const router = express.Router();
-const cookieParser = require('cookie-parser');
-router.use(cookieParser);
+
 router.get('/token', (req, res) => {
-  const token = req.cookies.authToken;
-
-  if (!token) {
-    return res.status(401).json({ success: false, message: 'No access token found in cookies' });
-  }
-
   try {
-    const decoded = jwt.decode(token);
-    res.json({ success: true, decoded });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    const accessToken = req.user.accessToken;
+    if (!accessToken) {
+      return res.status(400).json({ success: false, message: 'Access token not found' });
+    }
+
+    res.json({ success: true, accessToken });
   } catch (error) {
-    console.error('Error decoding token:', error);
-    res.status(500).json({ success: false, message: 'Failed to decode access token' });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

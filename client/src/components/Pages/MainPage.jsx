@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
@@ -13,16 +12,23 @@ function MainPage() {
   const navigate = useNavigate();
   const [accessToken, setAccessToken] = useState('');
   const [roomId, setRoomId] = useState('');
-  console.log(roomId);
   const [socketConnected, setSocketConnected] = useState(false);
 
   useEffect(() => {
-    const accessToken = axios.get('http://localhost:4000/access/token');
-    setAccessToken(accessToken);
-  }, []);
+    const fetchAccessToken = async () => {
+      try {
+        const response = await axios.get('http://localhost:4000/access/token', { withCredentials: true });
+        setAccessToken(response.data.accessToken);
+        console.log("token value is ",accessToken);
+      } catch (error) {
+        console.error('Error fetching access token:', error.message);
+      }
+    };
 
-  useEffect(() => {
+    fetchAccessToken();
+
     socket.on('connect', () => {
+      console.log("Socket Connected");
       setSocketConnected(true);
     });
 
@@ -34,7 +40,7 @@ function MainPage() {
       socket.off('connect');
       socket.off('disconnect');
     };
-  }, [accessToken]);
+  },);
 
   const handleCreateRoom = async () => {
     if (socketConnected) {
@@ -51,7 +57,7 @@ function MainPage() {
 
         if (response.success) {
           setRoomId(response.roomId);
-          navigate(`/room/${response.roomId}`);
+          navigate(`/room/${roomId}`);
         } else {
           console.error('Failed to create room:', response.message);
         }
@@ -59,7 +65,7 @@ function MainPage() {
         console.error('Error creating room:', error.message);
       }
     } else {
-      console.log("Socket not connected. Please wait...");
+      console.log('Socket not connected. Please wait...');
     }
   };
 
