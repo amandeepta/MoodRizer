@@ -11,7 +11,6 @@ const socket = io('http://localhost:4000', {
 function MainPage() {
   const navigate = useNavigate();
   const [accessToken, setAccessToken] = useState('');
-  const [roomId, setRoomId] = useState('');
   const [socketConnected, setSocketConnected] = useState(false);
 
   useEffect(() => {
@@ -19,7 +18,7 @@ function MainPage() {
       try {
         const response = await axios.get('http://localhost:4000/access/token', { withCredentials: true });
         setAccessToken(response.data.accessToken);
-        console.log("token value is ",accessToken);
+        console.log("Fetched access token:", response.data.accessToken);
       } catch (error) {
         console.error('Error fetching access token:', error.message);
       }
@@ -33,6 +32,7 @@ function MainPage() {
     });
 
     socket.on('disconnect', () => {
+      console.log("Socket Disconnected");
       setSocketConnected(false);
     });
 
@@ -40,37 +40,39 @@ function MainPage() {
       socket.off('connect');
       socket.off('disconnect');
     };
-  },);
+  }, []); // Empty dependency array to run this effect only once
 
-  const handleCreateRoom = async () => {
+  const handleCreateRoom = () => {
     if (socketConnected) {
-      try {
-        const response = await new Promise((resolve, reject) => {
-          socket.emit('createRoom', accessToken, (data) => {
-            if (data.success) {
-              resolve(data);
-            } else {
-              reject(new Error(data.message));
-            }
-          });
-        });
-
-        if (response.success) {
-          setRoomId(response.roomId);
-          navigate(`/room/${roomId}`);
-        } else {
-          console.error('Failed to create room:', response.message);
-        }
-      } catch (error) {
-        console.error('Error creating room:', error.message);
+      if (!accessToken) {
+        console.error("Access token is required.");
+        return;
       }
+  
+      socket.emit('createRoom', accessToken, (response) => {
+        console.log('Server response:', response); // Debug log
+        if (response.success) {
+          navigate(`/room/${response.roomId}`);
+        } else {
+          console.error("Error creating the room:", response.message);
+        }
+      });
     } else {
-      console.log('Socket not connected. Please wait...');
+      console.error("Socket is not connected.");
     }
   };
 
   const handleJoinRoom = () => {
     navigate('/join');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.get('http://localhost:4000/logout', { withCredentials: true });
+      navigate('/login'); // Navigate to login page after logout
+    } catch (error) {
+      console.error('Error logging out:', error.message);
+    }
   };
 
   return (
@@ -81,6 +83,7 @@ function MainPage() {
         <button disabled>Create Room (Connecting...)</button>
       )}
       <button onClick={handleJoinRoom}>Join Room</button>
+      <button onClick={handleLogout}>Logout</button>
     </div>
   );
 }
