@@ -66,14 +66,6 @@ function MainPage() {
     navigate('/join');
   };
 
-  const handleLogout = async () => {
-    try {
-      await axios.get('http://localhost:4000/logout', { withCredentials: true });
-      navigate('/login'); // Navigate to login page after logout
-    } catch (error) {
-      console.error('Error logging out:', error.message);
-    }
-  };
 
   return (
     <div>
@@ -83,7 +75,6 @@ function MainPage() {
         <button disabled>Create Room (Connecting...)</button>
       )}
       <button onClick={handleJoinRoom}>Join Room</button>
-      <button onClick={handleLogout}>Logout</button>
     </div>
   );
 }
