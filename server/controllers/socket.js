@@ -4,26 +4,10 @@ const axios = require('axios');
 
 // Function to generate a random room ID
 function generateRoomId() {
-  return Math.floor(10000 + Math.random() * 90000).toString(); 
-}
+  const val =  Math.floor(10000 + Math.random() * 90000).toString(); 
+  console.log(val);
+  return val;
 
-// Function to fetch user information from Spotify
-async function fetchUserInfo(accessToken) {
-  if (!accessToken) {
-    throw new Error('Access token is required');
-  }
-
-  try {
-    const response = await axios.get('https://api.spotify.com/v1/me', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching user information:', error.response ? error.response.data : error.message);
-    throw new Error('Failed to fetch user information');
-  }
 }
 
 // Socket.IO event handler
@@ -40,6 +24,7 @@ const socketHandler = (io) => {
         let roomId;
         do {
           roomId = generateRoomId();
+          console.log('Attempting to create room with ID:', roomId);
           const roomExists = await Room.exists({ roomId });
           if (!roomExists) break;
         } while (true);

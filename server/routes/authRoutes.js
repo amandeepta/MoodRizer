@@ -73,4 +73,19 @@ router.get('/spotify/callback', passport.authenticate('spotify', { failureRedire
   res.redirect('http://localhost:5173/main');
 });
 
+router.get('/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    req.session.destroy((err) => {
+      if (err) {
+        return next(err);
+      }
+      res.clearCookie('connect.sid');
+      res.redirect('http://localhost:5173'); 
+    });
+  });
+});
+
 module.exports = router;
