@@ -3,7 +3,10 @@
 function AuthPage() {
   const spotifyAuth = () => {
     const apiUrl = "http://localhost:4000";
-    window.location.href = `${apiUrl}/auth/spotify`;
+    window.open(
+      `${apiUrl}/auth/spotify`, 
+      "_self"
+    );
   };
 
   
