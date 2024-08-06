@@ -7,14 +7,14 @@ const socket = io('http://localhost:4000');
 function JoinPage() {
   const navigate = useNavigate();
   const [roomId, setRoomId] = useState('');
-
+  const accessToken = localStorage.getItem('accessToken');
   const handleJoinRoom = () => {
     if (roomId.trim() === '') {
       alert('Please enter a room ID');
       return;
     }
     
-    socket.emit('joinRoom', roomId, (response) => {
+    socket.emit('joinRoom',accessToken, roomId, (response) => {
         if (response.success) {
           setRoomId(roomId);
           navigate(`/room/${roomId}`); 
