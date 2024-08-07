@@ -29,11 +29,14 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID,
       clientSecret: process.env.CLIENT_SECRET,
-      callbackURL: '/auth/spotify/callback',
-      scope: ['user-read-email', 'user-read-private', 'user-read-playback-state']
+      callbackURL: 'http://localhost:4000/auth/spotify/callback',
+      scope: ['user-read-email', 'user-read-private', 'user-read-playback-state'],
     },
     async (accessToken, refreshToken, expires_in, profile, done) => {
       try {
+        console.log('Access Token:', accessToken);
+        console.log('Profile:', profile);
+
         let user = await User.findOne({ spotifyId: profile.id });
         const expirationTime = Date.now() + expires_in * 1000;
 
@@ -43,7 +46,7 @@ passport.use(
             displayName: profile.displayName,
             accessToken,
             refreshToken,
-            expiresAt: expirationTime
+            expiresAt: expirationTime,
           });
         } else {
           user.accessToken = accessToken;
@@ -54,6 +57,7 @@ passport.use(
         await user.save();
         return done(null, user);
       } catch (err) {
+        console.error('Error fetching profile:', err);
         return done(err);
       }
     }
