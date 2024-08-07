@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import axios from 'axios';
+import UserContext from '../../UserContext';
 
 const socket = io('http://localhost:4000', {
   transports: ['websocket'],
@@ -10,6 +11,7 @@ const socket = io('http://localhost:4000', {
 
 function MainPage() {
   const navigate = useNavigate();
+  const { addUser } = useContext(UserContext); // Access addUser from context
   const [accessToken, setAccessToken] = useState('');
   const [socketConnected, setSocketConnected] = useState(false);
 
@@ -37,11 +39,17 @@ function MainPage() {
       setSocketConnected(false);
     });
 
+    socket.on('creator', (creatorInfo) => {
+      console.log('Room creator:', creatorInfo);
+      addUser(creatorInfo); // Add creator to context
+    });
+
     return () => {
       socket.off('connect');
       socket.off('disconnect');
+      socket.off('creator'); // Clean up creator event listener
     };
-  }, []);
+  }, [addUser]);
 
   const handleCreateRoom = () => {
     if (socketConnected) {
