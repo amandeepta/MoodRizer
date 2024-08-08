@@ -4,16 +4,12 @@ import io from 'socket.io-client';
 import axios from 'axios';
 import UserContext from '../../UserContext';
 
-const socket = io('http://localhost:4000', {
-  transports: ['websocket'],
-  withCredentials: true
-});
-
 function MainPage() {
   const navigate = useNavigate();
   const { addUser } = useContext(UserContext); // Access addUser from context
   const [accessToken, setAccessToken] = useState('');
   const [socketConnected, setSocketConnected] = useState(false);
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
     const fetchAccessToken = async () => {
@@ -29,27 +25,35 @@ function MainPage() {
 
     fetchAccessToken();
 
-    socket.on('connect', () => {
+    const newSocket = io('http://localhost:4000', {
+      transports: ['websocket'],
+      withCredentials: true
+    });
+
+    setSocket(newSocket);
+
+    newSocket.on('connect', () => {
       console.log("Socket Connected");
+      console.log(newSocket.id);
       setSocketConnected(true);
     });
 
-    socket.on('disconnect', () => {
+    newSocket.on('disconnect', () => {
       console.log("Socket Disconnected");
       setSocketConnected(false);
     });
 
-    socket.on('creator', (creatorInfo) => {
+    newSocket.on('creator', (creatorInfo) => {
       console.log('Room creator:', creatorInfo);
       addUser(creatorInfo); // Add creator to context
     });
 
     return () => {
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('creator'); // Clean up creator event listener
+      newSocket.off('connect');
+      newSocket.off('disconnect');
+      newSocket.off('creator'); 
     };
-  }, [addUser]);
+  }, []);
 
   const handleCreateRoom = () => {
     if (socketConnected) {
