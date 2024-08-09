@@ -1,50 +1,56 @@
-import { useContext, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
-import UserContext from '../../UserContext';
-
-// Create socket instance inside the component
-const socket = io('http://localhost:4000');
 
 function RoomPage() {
   const { roomId } = useParams();
-  const { users, addUser } = useContext(UserContext);
+  const [users, setUsers] = useState([]);
   const accessToken = localStorage.getItem('accessToken');
 
   useEffect(() => {
-    if (!accessToken) {
-      console.error('No access token found');
-      return;
-    }
+    const socket = io('http://localhost:4000', {
+      transports: ['websocket'],
+      withCredentials: true,
+    });
 
-    // Join the room when the component mounts
-    socket.emit('joinRoom', accessToken, roomId, (response) => {
-      if (!response.success) {
-        console.error('Error joining room:', response.message);
-        return;
-      }
-      console.log('Successfully joined room');
+    // Listen for the connect event
+    socket.on('connect', () => {
+      console.log('Socket connected');
+      // Attempt to join the room after connecting
+      socket.emit('joinRoom', accessToken, roomId, (response) => {
+        if (!response.success) {
+          console.error('Error joining room:', response.message);
+          return;
+        }
+        console.log('Successfully joined room');
+      });
+    });
+
+    // Listen for the initial list of users in the room
+    socket.on('roomUsers', (initialUsers) => {
+      console.log('Initial users:', initialUsers);
+      setUsers(initialUsers); // Update local state with initial users
     });
 
     // Handle the 'newUserJoined' event
     socket.on('newUserJoined', (newUser) => {
       console.log('New user joined:', newUser);
-      addUser(newUser);
+      setUsers((prevUsers) => [...prevUsers, newUser]); // Add new user to the existing list
     });
 
     // Handle the 'userLeft' event
     socket.on('userLeft', (leftUser) => {
       console.log('User left:', leftUser);
-      const updatedUsers = users.filter((user) => user.name !== leftUser.name);
-      addUser(updatedUsers);
+      setUsers((prevUsers) => prevUsers.filter((user) => user.name !== leftUser.name)); // Remove user from the list
     });
 
     // Cleanup on unmount
     return () => {
       socket.off('newUserJoined');
       socket.off('userLeft');
+      socket.off('roomUsers');
     };
-  }, [accessToken, roomId, addUser, users]);
+  }, [accessToken, roomId]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-center p-8">

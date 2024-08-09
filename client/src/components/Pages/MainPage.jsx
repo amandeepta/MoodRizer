@@ -1,12 +1,10 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import axios from 'axios';
-import UserContext from '../../UserContext';
 
 function MainPage() {
   const navigate = useNavigate();
-  const { addUser } = useContext(UserContext); // Access addUser from context
   const [accessToken, setAccessToken] = useState('');
   const [socketConnected, setSocketConnected] = useState(false);
   const [socket, setSocket] = useState(null);
@@ -33,8 +31,7 @@ function MainPage() {
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
-      console.log("Socket Connected");
-      console.log(newSocket.id);
+      console.log("Socket Connected in main page");
       setSocketConnected(true);
     });
 
@@ -43,16 +40,6 @@ function MainPage() {
       setSocketConnected(false);
     });
 
-    newSocket.on('creator', (creatorInfo) => {
-      console.log('Room creator:', creatorInfo);
-      addUser(creatorInfo); // Add creator to context
-    });
-
-    return () => {
-      newSocket.off('connect');
-      newSocket.off('disconnect');
-      newSocket.off('creator'); 
-    };
   }, []);
 
   const handleCreateRoom = () => {
