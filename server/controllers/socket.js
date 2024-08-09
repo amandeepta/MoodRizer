@@ -11,7 +11,15 @@ function generateRoomId() {
 // Helper function to get user info based on access token
 async function getUserInfo(accessToken) {
   const user = await User.findOne({ accessToken });
-  return user ? { name: user.displayName, imageUrl: user.imageUrl } : null;
+  return user ? { name: user.displayName} : null;
+}
+
+// Helper function to get all users in a room
+async function getAllUsersInRoom(room) {
+  const userIds = room.users; // Assuming 'users' field contains access tokens
+  const usersPromises = userIds.map(getUserInfo);
+  const users = await Promise.all(usersPromises);
+  return users.filter(user => user !== null); // Filter out any failed lookups
 }
 
 // Socket.IO event handler
@@ -42,7 +50,7 @@ const socketHandler = (io) => {
 
         const creatorInfo = await getUserInfo(accessToken);
         socket.join(roomId);
-        socket.emit('creator', creatorInfo);
+        socket.emit('roomUsers', [creatorInfo]); // Emit initial room users to the creator
 
         callback({ success: true, roomId });
       } catch (error) {
@@ -70,6 +78,10 @@ const socketHandler = (io) => {
 
           socket.join(roomId);
 
+          // Send current room users to the newly joined user
+          const roomUsers = await getAllUsersInRoom(room);
+          socket.emit('roomUsers', roomUsers);
+
           // Notify other users about the new user
           if (newUserInfo) {
             socket.broadcast.to(roomId).emit('newUserJoined', newUserInfo);
@@ -95,6 +107,7 @@ const socketHandler = (io) => {
         if (room) {
           room.users.pull(accessToken);
           await room.save();
+          console.log("User left");
           socket.broadcast.to(room.roomId).emit('userLeft', await getUserInfo(accessToken));
         }
       }
