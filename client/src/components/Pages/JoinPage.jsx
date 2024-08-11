@@ -1,16 +1,31 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function JoinPage() {
   const navigate = useNavigate();
   const [roomId, setRoomId] = useState('');
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = async () => {
     if (roomId.trim() === '') {
       alert('Please enter a room ID');
       return;
     }
-    navigate(`/room/${roomId}`);
+
+    try {
+      const response = await axios.post('http://localhost:4000/access/check', {
+        roomId
+      });
+
+      if (response.data.success) {
+        navigate(`/room/${roomId}`);
+      } else {
+        alert('Room ID does not exist');
+      }
+    } catch (error) {
+      console.error('Error checking room ID:', error.message);
+      alert('There was an error checking the room ID');
+    }
   };
 
   const handleRoomIdChange = (event) => {
