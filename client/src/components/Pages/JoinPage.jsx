@@ -14,8 +14,9 @@ function JoinPage() {
 
     try {
       const response = await axios.post('http://localhost:4000/access/check', {
-        roomId
+        roomId: roomId
       });
+      
 
       if (response.data.success) {
         navigate(`/room/${roomId}`);

@@ -14,7 +14,7 @@ function MainPage() {
       }
     };
     fetchAccessToken();
-  }, []);
+  });
 
   const handleCreateRoom = async () => {
     try {

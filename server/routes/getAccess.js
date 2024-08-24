@@ -29,8 +29,8 @@ router.get('/create-room', async (req, res) => {
 
 router.get('/check', async (req, res) => {
   try {
-    const { roomId } = req.query;
-
+    const roomId = req.body;
+    console.log(roomId);
     if (!roomId) {
       return res.status(400).json({ success: false, message: 'Room ID is required' });
     }

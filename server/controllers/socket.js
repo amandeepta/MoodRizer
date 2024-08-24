@@ -40,7 +40,9 @@ const socketHandler = (io) => {
           const roomUsers = await getAllUserNamesInRoom(room);
           socket.emit('roomUsers', roomUsers);
 
-          socket.broadcast.to(roomId).emit('newUserJoined', userInfo);
+          socket.broadcast.to(roomId).emit('newUserJoined', {
+            name: userInfo.displayName,
+          });
 
           callback({ success: true });
         } else {

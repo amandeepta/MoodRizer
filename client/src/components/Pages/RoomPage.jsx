@@ -35,7 +35,6 @@ function RoomPage() {
     // Handle the 'newUserJoined' event
     socket.on('newUserJoined', (newUser) => {
       console.log('New user joined:', newUser);
-      setUsers((prevUsers) => [...prevUsers, newUser]); // Add new user to the existing list
     });
 
     // Handle the 'userLeft' event
@@ -49,6 +48,7 @@ function RoomPage() {
       socket.off('newUserJoined');
       socket.off('userLeft');
       socket.off('roomUsers');
+      socket.disconnect();
     };
   }, [accessToken, roomId]);
 
@@ -65,8 +65,7 @@ function RoomPage() {
         <ul className="list-disc text-white">
           {users.map((user, index) => (
             <li key={index} className="mb-2">
-              <img src={user.imageUrl} alt={`${user.name}'s avatar`} className="inline-block w-6 h-6 rounded-full mr-2" />
-              {user.name}
+              {user}
             </li>
           ))}
         </ul>
