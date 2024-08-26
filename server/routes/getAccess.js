@@ -27,26 +27,27 @@ router.get('/create-room', async (req, res) => {
   }
 });
 
-router.get('/check', async (req, res) => {
+router.post('/check', async (req, res) => {
   try {
-    const roomId = req.body;
+    const { roomId } = req.body; // Extract roomId directly from req.body
     console.log(roomId);
     if (!roomId) {
       return res.status(400).json({ success: false, message: 'Room ID is required' });
     }
 
-    const room = await Room.findOne({ roomId });
+    const room = await Room.findOne({ roomId: roomId.toString() }); // Ensure roomId is a string for the query
 
     if (room) {
       res.status(200).json({ success: true });
     } else {
-      res.status(404).json({ success: false, message: 'Room not found' });
+      res.status(404).json({ success: false, message: "Room not found" });
     }
   } catch (error) {
     console.error('Error checking room:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
 
 router.get('/token', (req, res) => {
   try {
