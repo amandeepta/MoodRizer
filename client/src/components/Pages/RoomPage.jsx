@@ -4,9 +4,13 @@ import io from 'socket.io-client';
 
 function RoomPage() {
   const { roomId } = useParams();
-  const [users, setUsers] = useState([]); 
-  const [message, setMessage] = useState(''); 
+  const [users, setUsers] = useState([]);
+  const [message, setMessage] = useState('');
+  const [songName, setSongName] = useState('');
+  const [play, setPlay] = useState('');
+  const [songPlayBy, setSongPlayBy] = useState('');
   const accessToken = localStorage.getItem('accessToken');
+  const [socketIo, setSocket] = useState(null);
 
   useEffect(() => {
     if (!accessToken) {
@@ -18,11 +22,12 @@ function RoomPage() {
       transports: ['websocket'],
       withCredentials: true,
     });
+    setSocket(socket);
 
     socket.on('connect', () => {
       socket.emit('joinRoom', accessToken, roomId, (response) => {
         if (response.success) {
-          console.log("Joined the room successfully");
+          console.log('Joined the room successfully');
         } else {
           console.error('Error joining room:', response.message);
         }
@@ -30,7 +35,6 @@ function RoomPage() {
     });
 
     socket.on('newUserJoined', (usersList, newUser) => {
-      console.log("new User Joined", newUser);
       setUsers(usersList);
       setMessage(`${newUser} has joined the room.`);
       setTimeout(() => {
@@ -38,46 +42,86 @@ function RoomPage() {
       }, 5000);
     });
 
-    socket.on('userLeft', (leftUser, userleft) => {
+    socket.on('userLeft', (leftUser, userLeft) => {
       setUsers(leftUser);
-      setMessage(`${userleft} has left the room.`);
+      setMessage(`${userLeft} has left the room.`);
       setTimeout(() => {
         setMessage('');
       }, 10000);
     });
 
-    // Cleanup on unmount
+    socket.on('receive', (songInfo) => {
+      setPlay(songInfo.name);
+      setSongPlayBy(songInfo.user);
+    });
+
     return () => {
       socket.off('newUserJoined');
       socket.off('userLeft');
+      socket.off('receive');
       socket.disconnect();
     };
   }, [accessToken, roomId]);
 
+  const handleInputChange = (e) => {
+    setSongName(e.target.value);
+  };
+
+  const sendSong = () => {
+    if (songName && socketIo) {
+      socketIo.emit('sendSong', songName);
+      setSongName('');
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 text-center p-8">
-      <h1 className="text-4xl font-extrabold text-white mb-6">
-        Room ID: {roomId}
-      </h1>
-      <p className="text-lg text-gray-300 mb-8">
-        Welcome to the room. Enjoy your time here!
-      </p>
-      <div className="mt-6">
-        <h2 className="text-2xl font-bold text-white mb-4">Users in the room:</h2>
-        <ul className="list-disc text-white">
-          {users.length > 0 ? (
-            users.map((user, index) => (
-              <li key={index} className="mb-2">
-                {user}
-              </li>
-            ))
-          ) : (
-            <li className="text-gray-400">No users in the room</li>
-          )}
-        </ul>
-      </div>
-      <div className="mt-6">
-        <pre className="text-white whitespace-pre-wrap">{message}</pre>
+    <div className="flex min-h-screen bg-[url('/path/to/your/background-image.jpg')] bg-cover bg-center text-center">
+      <div className="w-full flex flex-col items-center justify-center bg-black bg-opacity-60 p-8">
+        <div className="absolute top-0 left-0 p-8 bg-black bg-opacity-50 text-white rounded-br-lg">
+          <h2 className="text-2xl font-bold mb-4">Users in the room:</h2>
+          <ul className="list-disc">
+            {users.length > 0 ? (
+              users.map((user, index) => (
+                <li key={index} className="mb-2">
+                  {user}
+                </li>
+              ))
+            ) : (
+              <li className="text-gray-400">No users in the room</li>
+            )}
+          </ul>
+        </div>
+        <div className="flex flex-col items-center justify-center w-full max-w-lg bg-black bg-opacity-70 p-8 rounded-lg shadow-lg">
+          <h1 className="text-4xl font-extrabold text-white mb-6">
+            Room ID: {roomId}
+          </h1>
+          <p className="text-lg text-gray-300 mb-8">
+            Welcome to the room. Enjoy your time here!
+          </p>
+          <div className="mb-6">
+            <pre className="text-white whitespace-pre-wrap">{message}</pre>
+          </div>
+          <div className="flex flex-col items-center mb-6">
+            <input
+              type="text"
+              value={songName}
+              onChange={handleInputChange}
+              placeholder="Enter the song name"
+              className="p-3 text-black rounded-lg border border-gray-300 mb-4 w-80"
+            />
+            <button
+              onClick={sendSong}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition duration-300"
+            >
+              Send Song
+            </button>
+            {play && (
+              <h1 className="text-white mt-6 text-2xl font-bold">
+                Now Playing: <span className="italic">{play}</span> by <span className="font-semibold">{songPlayBy}</span>
+              </h1>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

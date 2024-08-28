@@ -22,6 +22,7 @@ const socketHandler = (io) => {
   io.on('connection', (socket) => {
     let accessToken;
     let currentRoomId;
+    let userName;
 
     socket.on('joinRoom', async (token, roomId, callback) => {
       accessToken = token;
@@ -33,6 +34,7 @@ const socketHandler = (io) => {
 
       try {
         const userInfo = await getUserInfo(accessToken);
+        userName = userInfo.displayName;
         if (!userInfo) {
           return callback({ success: false, message: 'User not found' });
         }
@@ -55,6 +57,23 @@ const socketHandler = (io) => {
         }
       } catch (error) {
         callback({ success: false, message: 'Failed to join room' });
+      }
+    });
+
+    socket.on('sendSong', async (songName) => {
+      if (!accessToken || !songName) {
+        return;
+      }
+
+      try {
+        const songInfo = {
+          name: songName,
+          user: userName
+        };
+
+        io.to(currentRoomId).emit('receive', songInfo);
+      } catch (error) {
+        console.error('Error sending song:', error);
       }
     });
 
