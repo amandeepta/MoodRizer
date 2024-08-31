@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
+import MusicPlayer from './Player/MusicPlayer';
 
 function RoomPage() {
   const { roomId } = useParams();
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState('');
-  const [songName, setSongName] = useState('');
-  const [play, setPlay] = useState('');
+  const [song, setSong] = useState('');
+  const [nowPlaying, setNowPlaying] = useState('');
+  const [play, setPlay] = useState(false);
   const [songPlayBy, setSongPlayBy] = useState('');
+  const [uri, setUri] = useState('');
   const accessToken = localStorage.getItem('accessToken');
   const [socketIo, setSocket] = useState(null);
 
   useEffect(() => {
-    if (!accessToken) {
-      console.error('No access token found');
-      return;
-    }
+    if (!accessToken) return;
 
     const socket = io('http://localhost:4000', {
       transports: ['websocket'],
@@ -26,9 +26,7 @@ function RoomPage() {
 
     socket.on('connect', () => {
       socket.emit('joinRoom', accessToken, roomId, (response) => {
-        if (response.success) {
-          console.log('Joined the room successfully');
-        } else {
+        if (!response.success) {
           console.error('Error joining room:', response.message);
         }
       });
@@ -37,22 +35,20 @@ function RoomPage() {
     socket.on('newUserJoined', (usersList, newUser) => {
       setUsers(usersList);
       setMessage(`${newUser} has joined the room.`);
-      setTimeout(() => {
-        setMessage('');
-      }, 5000);
+      setTimeout(() => setMessage(''), 5000);
     });
 
     socket.on('userLeft', (leftUser, userLeft) => {
       setUsers(leftUser);
       setMessage(`${userLeft} has left the room.`);
-      setTimeout(() => {
-        setMessage('');
-      }, 10000);
+      setTimeout(() => setMessage(''), 10000);
     });
 
     socket.on('receive', (songInfo) => {
-      setPlay(songInfo.name);
+      setPlay(true);
+      setNowPlaying(songInfo.name);
       setSongPlayBy(songInfo.user);
+      setUri(songInfo.uri);
     });
 
     return () => {
@@ -64,13 +60,22 @@ function RoomPage() {
   }, [accessToken, roomId]);
 
   const handleInputChange = (e) => {
-    setSongName(e.target.value);
+    setSong(e.target.value);
   };
 
   const sendSong = () => {
-    if (songName && socketIo) {
-      socketIo.emit('sendSong', songName);
-      setSongName('');
+    if (song && socketIo) {
+      socketIo.emit('sendSong', song);
+      setSong('');
+    }
+  };
+
+  const handlePlay = () => {
+    if (socketIo) {
+      socketIo.emit('music-control', !play);
+      socketIo.on('play-song', (newState) => {
+        setPlay(newState);
+      })
     }
   };
 
@@ -92,19 +97,15 @@ function RoomPage() {
           </ul>
         </div>
         <div className="flex flex-col items-center justify-center w-full max-w-lg bg-black bg-opacity-70 p-8 rounded-lg shadow-lg">
-          <h1 className="text-4xl font-extrabold text-white mb-6">
-            Room ID: {roomId}
-          </h1>
-          <p className="text-lg text-gray-300 mb-8">
-            Welcome to the room. Enjoy your time here!
-          </p>
+          <h1 className="text-4xl font-extrabold text-white mb-6">Room ID: {roomId}</h1>
+          <p className="text-lg text-gray-300 mb-8">Welcome to the room. Enjoy your time here!</p>
           <div className="mb-6">
             <pre className="text-white whitespace-pre-wrap">{message}</pre>
           </div>
           <div className="flex flex-col items-center mb-6">
             <input
               type="text"
-              value={songName}
+              value={song}
               onChange={handleInputChange}
               placeholder="Enter the song name"
               className="p-3 text-black rounded-lg border border-gray-300 mb-4 w-80"
@@ -117,10 +118,16 @@ function RoomPage() {
             </button>
             {play && (
               <h1 className="text-white mt-6 text-2xl font-bold">
-                Now Playing: <span className="italic">{play}</span> by <span className="font-semibold">{songPlayBy}</span>
+                Now Playing: <span className="italic">{nowPlaying}</span> by <span className="font-semibold">{songPlayBy}</span>
               </h1>
             )}
           </div>
+          <div>
+            <button onClick={handlePlay} className="px-6 py-3 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-300">
+              {play ? "Pause" : "Play"}
+            </button>
+          </div>
+          <MusicPlayer play={play} uri={uri} accessToken={accessToken} />
         </div>
       </div>
     </div>

@@ -30,13 +30,17 @@ passport.use(
       clientID: process.env.CLIENT_ID,
       clientSecret: process.env.CLIENT_SECRET,
       callbackURL: 'http://localhost:4000/auth/spotify/callback',
-      scope: ['user-read-email', 'user-read-private', 'user-read-playback-state'],
+      scope: [
+        'user-read-email',
+        'user-read-private',
+        'user-read-playback-state',
+        'user-modify-playback-state',
+        'streaming',
+        'user-read-currently-playing',
+      ],
     },
     async (accessToken, refreshToken, expires_in, profile, done) => {
       try {
-        console.log('Access Token:', accessToken);
-        console.log('Profile:', profile);
-
         let user = await User.findOne({ spotifyId: profile.id });
         const expirationTime = Date.now() + expires_in * 1000;
 
@@ -57,7 +61,6 @@ passport.use(
         await user.save();
         return done(null, user);
       } catch (err) {
-        console.error('Error fetching profile:', err);
         return done(err);
       }
     }
@@ -65,34 +68,36 @@ passport.use(
 );
 
 router.get('/spotify', passport.authenticate('spotify', {
-  scope: ['user-read-email', 'user-read-private', 'user-read-playback-state'],
-  showDialog: true
+  scope: [
+    'user-read-email',
+    'user-read-private',
+    'user-read-playback-state',
+    'user-modify-playback-state',
+    'streaming',
+    'user-read-currently-playing',
+  ],
+  showDialog: true,
 }));
-
 
 router.get('/spotify/callback', passport.authenticate('spotify', {
   failureRedirect: '/',
-  successRedirect: 'http://localhost:5173/main'
-}));
+}), (req, res) => {
+  res.redirect('http://localhost:5173/main');
+});
 
 router.get('/logout', (req, res) => {
-  try {
-    req.logout((err) => {
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).send('Internal Server Error');
+    }
+    req.session.destroy((err) => {
       if (err) {
         return res.status(500).send('Internal Server Error');
       }
-      req.session.destroy((err) => {
-        if (err) {
-          return res.status(500).send('Internal Server Error');
-        }
-        res.clearCookie('connect.sid'); // Clear the session cookie (if you're using 'connect.sid')
-        res.redirect('/');
-      });
+      res.clearCookie('connect.sid');
+      res.redirect('/');
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Internal Server Error');
-  }
+  });
 });
 
 module.exports = router;

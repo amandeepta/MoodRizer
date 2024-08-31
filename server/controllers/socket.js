@@ -1,17 +1,38 @@
 const Room = require('../models/Room');
 const User = require('../models/User');
+const axios = require('axios');
 
 async function getUserInfo(accessToken) {
   return await User.findOne({ accessToken }) || null;
 }
 
+async function getSongUri(songName, accessToken) {
+  const searchUrl = 'https://api.spotify.com/v1/search';
+
+  try {
+    const response = await axios.get(searchUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      },
+      params: {
+        q: songName,
+        type: 'track',
+        limit: 1
+      }
+    });
+
+    const tracks = response.data.tracks.items;
+    return tracks.length > 0 ? tracks[0].uri : null;
+  } catch (error) {
+    console.error('Error searching for song:', error);
+    return null;
+  }
+}
+
 async function getUsersInRoom(roomId) {
   try {
     const room = await Room.findOne({ roomId });
-    if (!room) {
-      throw new Error('Room not found');
-    }
-    return room.users.map(user => user.name);
+    return room ? room.users.map(user => user.name) : [];
   } catch (error) {
     console.error('Error fetching users in room:', error);
     return [];
@@ -23,6 +44,7 @@ const socketHandler = (io) => {
     let accessToken;
     let currentRoomId;
     let userName;
+    let songinfo;
 
     socket.on('joinRoom', async (token, roomId, callback) => {
       accessToken = token;
@@ -34,10 +56,11 @@ const socketHandler = (io) => {
 
       try {
         const userInfo = await getUserInfo(accessToken);
-        userName = userInfo.displayName;
         if (!userInfo) {
           return callback({ success: false, message: 'User not found' });
         }
+
+        userName = userInfo.displayName;
 
         const room = await Room.findOne({ roomId });
         if (room) {
@@ -56,6 +79,7 @@ const socketHandler = (io) => {
           callback({ success: false, message: 'Room not found' });
         }
       } catch (error) {
+        console.error('Error joining room:', error);
         callback({ success: false, message: 'Failed to join room' });
       }
     });
@@ -66,15 +90,27 @@ const socketHandler = (io) => {
       }
 
       try {
+        const songUri = await getSongUri(songName, accessToken);
+        if (!songUri) {
+          console.error('Could not find song URI');
+          return;
+        }
+        console.log(songUri);
         const songInfo = {
           name: songName,
+          uri: songUri,
           user: userName
         };
+        songinfo = songInfo;
 
         io.to(currentRoomId).emit('receive', songInfo);
       } catch (error) {
         console.error('Error sending song:', error);
       }
+    });
+
+    socket.on('music-control', (play) => {
+      io.to(currentRoomId).emit('play-song', play);
     });
 
     socket.on('disconnect', async () => {
