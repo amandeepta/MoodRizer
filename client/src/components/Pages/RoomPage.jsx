@@ -75,29 +75,27 @@ function RoomPage() {
       socketIo.emit('music-control', !play);
       socketIo.on('play-song', (newState) => {
         setPlay(newState);
-      })
+      });
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-[url('/path/to/your/background-image.jpg')] bg-cover bg-center text-center">
-      <div className="w-full flex flex-col items-center justify-center bg-black bg-opacity-60 p-8">
-        <div className="absolute top-0 left-0 p-8 bg-black bg-opacity-50 text-white rounded-br-lg">
-          <h2 className="text-2xl font-bold mb-4">Users in the room:</h2>
-          <ul className="list-disc">
+    <div className="flex min-h-screen bg-cover bg-center" style={{ backgroundImage: "url('/path/to/your/background-image.jpg')" }}>
+      <div className="w-full flex flex-col items-center justify-center bg-black bg-opacity-70 p-8">
+        <div className="absolute top-8 left-8 p-4 bg-black bg-opacity-60 text-white rounded-lg shadow-lg w-80">
+          <h2 className="text-xl font-semibold mb-4">Users in the room:</h2>
+          <ul className="list-disc pl-4">
             {users.length > 0 ? (
               users.map((user, index) => (
-                <li key={index} className="mb-2">
-                  {user}
-                </li>
+                <li key={index} className="mb-2">{user}</li>
               ))
             ) : (
               <li className="text-gray-400">No users in the room</li>
             )}
           </ul>
         </div>
-        <div className="flex flex-col items-center justify-center w-full max-w-lg bg-black bg-opacity-70 p-8 rounded-lg shadow-lg">
-          <h1 className="text-4xl font-extrabold text-white mb-6">Room ID: {roomId}</h1>
+        <div className="flex flex-col items-center justify-center w-full max-w-4xl bg-black bg-opacity-80 p-8 rounded-lg shadow-xl">
+          <h1 className="text-3xl font-bold text-white mb-6">Room ID: {roomId}</h1>
           <p className="text-lg text-gray-300 mb-8">Welcome to the room. Enjoy your time here!</p>
           <div className="mb-6">
             <pre className="text-white whitespace-pre-wrap">{message}</pre>
@@ -117,17 +115,22 @@ function RoomPage() {
               Send Song
             </button>
             {play && (
-              <h1 className="text-white mt-6 text-2xl font-bold">
+              <h1 className="text-white mt-6 text-xl font-semibold">
                 Now Playing: <span className="italic">{nowPlaying}</span> by <span className="font-semibold">{songPlayBy}</span>
               </h1>
             )}
           </div>
-          <div>
-            <button onClick={handlePlay} className="px-6 py-3 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-300">
+          <div className="mb-8">
+            <button
+              onClick={handlePlay}
+              className="px-6 py-3 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-300"
+            >
               {play ? "Pause" : "Play"}
             </button>
           </div>
-          <MusicPlayer play={play} uri={uri} accessToken={accessToken} />
+          <div className="w-full flex flex-col items-center">
+            <MusicPlayer play={play} uri={uri} accessToken={accessToken} />
+          </div>
         </div>
       </div>
     </div>
