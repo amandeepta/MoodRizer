@@ -6,16 +6,17 @@ import jwtDecode from 'jwt-decode';
 function MainPage() {
   const navigate = useNavigate();
   const [accessToken, setAccessToken] = useState('');
+
   const fetchAccessToken = async () => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
-      
+
       if (token) {
         const decodedToken = jwtDecode(token);
-        localStorage.setItem('accessToken', decodedToken); 
-        setAccessToken(decodedToken)// Store the JWT token
-        console.log('Token decoded:', accessToken);
+        localStorage.setItem('accessToken', token);
+        setAccessToken(token);
+        console.log('Token decoded:', decodedToken);
       } else {
         console.error('No token found in URL');
       }
