@@ -22,13 +22,14 @@ const mongoStore = MongoStore.create({
 });
 
 app.use(cookieParser());
+app.set('trust proxy', 1); // Trust first proxy
 
 app.use(session({
   store: mongoStore,
   secret: process.env.SECRET || 'your-default-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 }
+  cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 
 app.use(passport.initialize());
