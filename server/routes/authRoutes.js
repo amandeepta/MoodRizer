@@ -1,95 +1,91 @@
 const express = require('express');
-const passport = require('passport');
-const SpotifyStrategy = require('passport-spotify').Strategy;
+const axios = require('axios');
 const User = require('../models/User');
 const dotenv = require('dotenv');
+const jwt = require('jsonwebtoken');
 
 dotenv.config();
 
+const generateToken = (token) => {
+  return jwt.sign(
+    { token },
+    process.env.SECRET,
+    { expiresIn: '1h' }
+  );
+};
+
 const router = express.Router();
 
-passport.serializeUser((user, done) => {
-  done(null, user.spotifyId);
-});
-
-passport.deserializeUser((spotifyId, done) => {
-  done(null, spotifyId);
-});
-
-passport.use(
-  new SpotifyStrategy(
-    {
-      clientID: process.env.CLIENT_ID,
-      clientSecret: process.env.CLIENT_SECRET,
-      callbackURL: 'https://mood-rizer-backend.onrender.com/auth/spotify/callback',
-      scope: [
-        'user-read-email',
-        'user-read-private',
-        'user-read-playback-state',
-        'user-modify-playback-state',
-        'streaming',
-        'user-read-currently-playing',
-      ],
-    },
-    async (accessToken, refreshToken, expires_in, profile, done) => {
-      try {
-        let user = await User.findOne({ spotifyId: profile.id });
-        const expirationTime = Date.now() + expires_in * 1000;
-
-        if (!user) {
-          user = new User({
-            spotifyId: profile.id,
-            displayName: profile.displayName,
-            accessToken,
-            refreshToken,
-            expiresAt: expirationTime,
-          });
-        } else {
-          user.accessToken = accessToken;
-          user.refreshToken = refreshToken;
-          user.expiresAt = expirationTime;
-        }
-
-        await user.save();
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    }
-  )
-);
-
-router.get('/spotify', passport.authenticate('spotify', {
-  scope: [
+router.get('/spotify', (req, res) => {
+  const scope = [
     'user-read-email',
     'user-read-private',
     'user-read-playback-state',
     'user-modify-playback-state',
     'streaming',
     'user-read-currently-playing',
-  ],
-  showDialog: true,
-}));
+  ];
+  
+  const authURL = `https://accounts.spotify.com/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent('https://mood-rizer-backend.onrender.com/auth/spotify/callback')}&scope=${encodeURIComponent(scope.join(' '))}`;
+  
+  res.redirect(authURL);
+});
 
-router.get('/spotify/callback', passport.authenticate('spotify', {
-  failureRedirect: '/',
-}), (req, res) => {
-  res.redirect('https://mood-rizer.vercel.app/main');
+router.get('/spotify/callback', async (req, res) => {
+  const { code } = req.query;
+
+  try {
+    const response = await axios.post('https://accounts.spotify.com/api/token', new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: 'https://mood-rizer-backend.onrender.com/auth/spotify/callback'
+    }), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${Buffer.from(`${process.env.CLIENT_ID}:${process.env.CLIENT_SECRET}`).toString('base64')}`
+      }
+    });
+
+    const { access_token, refresh_token, expires_in } = response.data;
+    
+    const profileResponse = await axios.get('https://api.spotify.com/v1/me', {
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      }
+    });
+
+    const profile = profileResponse.data;
+    const expirationTime = Date.now() + expires_in * 1000;
+    
+    let user = await User.findOne({ spotifyId: profile.id });
+    
+    if (!user) {
+      user = new User({
+        spotifyId: profile.id,
+        displayName: profile.display_name,
+        accessToken: access_token,
+        refreshToken: refresh_token,
+        expiresAt: expirationTime,
+      });
+    } else {
+      user.accessToken = access_token;
+      user.refreshToken = refresh_token;
+      user.expiresAt = expirationTime;
+    }
+
+    await user.save();
+
+    const token = generateToken(user.accessToken);
+    res.redirect(`https://mood-rizer.vercel.app/main?token=${token}`);
+  } catch (err) {
+    console.error('Error during Spotify authentication:', err);
+    res.redirect('/error');
+  }
 });
 
 router.get('/logout', (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      return res.status(500).send('Internal Server Error');
-    }
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).send('Internal Server Error');
-      }
-      res.clearCookie('connect.sid');
-      res.redirect('/');
-    });
-  });
+  res.clearCookie('jwt');
+  res.redirect('/');
 });
 
 module.exports = router;
