@@ -29,7 +29,7 @@ app.use(session({
   secret: process.env.SECRET || 'your-default-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
+  cookie: { secure: process.env.NODE_ENV === 'production', maxAge : 24 * 60 * 60 * 1000, http : true, sameSite : 'None'}
 }));
 
 app.use(passport.initialize());
@@ -38,7 +38,8 @@ app.use(passport.session());
 const corsOptions = {
   origin: ['https://mood-rizer.vercel.app'], // Replace with your deployed frontend URL
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie']
 };
 
 app.use(cors(corsOptions));

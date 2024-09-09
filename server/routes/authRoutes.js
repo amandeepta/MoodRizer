@@ -12,16 +12,8 @@ passport.serializeUser((user, done) => {
   done(null, user.spotifyId);
 });
 
-passport.deserializeUser(async (spotifyId, done) => {
-  try {
-    const user = await User.findOne({ spotifyId });
-    if (!user) {
-      return done(new Error('User not found'));
-    }
-    done(null, user);
-  } catch (err) {
-    done(err);
-  }
+passport.deserializeUser((spotifyId, done) => {
+  done(null, spotifyId);
 });
 
 passport.use(

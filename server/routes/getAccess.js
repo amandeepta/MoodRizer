@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Room = require('../models/Room');
-
+const User = require('../models/User');
 function generateRoomId() {
   const val = Math.floor(10000 + Math.random() * 90000).toString();
   return val;
@@ -49,23 +49,29 @@ router.post('/check', async (req, res) => {
 });
 
 
-router.get('/token', (req, res) => {
+router.get('/token', async (req, res) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    if (req.isAuthenticated()) {
+      const spotifyId = req.user;
+      
+      if (!spotifyId) {
+        return res.status(401).json({ success: false, message: "Spotify ID not found" });
+      }
+
+      const acc = await User.findOne({ spotifyId });
+
+      if (!acc) {
+        return res.status(401).json({ success: false, message: "User data not found" });
+      }
+
+      const token = acc.accessToken;
+      return res.json({ success: true, accessToken : token });
+    } else {
+      return res.status(401).json({ success: false, message: "User not authenticated" });
     }
-
-    const accessToken = req.user.accessToken;
-    console.log(accessToken);
-
-    if (!accessToken) {
-      return res.status(400).json({ success: false, message: 'Access token not found' });
-    }
-
-    res.json({ success: true, accessToken });
   } catch (error) {
     console.error('Error retrieving access token:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
