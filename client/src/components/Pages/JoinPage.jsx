@@ -13,7 +13,7 @@ function JoinPage() {
     }
 
     try {
-      const response = await axios.post('http://localhost:4000/access/check', {
+      const response = await axios.post('https://mood-rizer-backend.onrender.com/access/check', {
         roomId: roomId
       });
 

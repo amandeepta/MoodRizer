@@ -8,7 +8,7 @@ function MainPage() {
   useEffect(() => {
     const fetchAccessToken = async () => {
       try {
-        const response = await axios.get('http://localhost:4000/access/token', { withCredentials: true });
+        const response = await axios.get('https://mood-rizer-backend.onrender.com/access/token', { withCredentials: true });
         localStorage.setItem('accessToken', response.data.accessToken);
       } catch (error) {
         console.error('Error fetching access token:', error.message);
@@ -19,7 +19,7 @@ function MainPage() {
 
   const handleCreateRoom = async () => {
     try {
-      const response = await axios.get('http://localhost:4000/access/create-room');
+      const response = await axios.get('https://mood-rizer-backend.onrender.com/access/create-room');
       console.log(response.data.roomId);
       navigate(`/room/${response.data.roomId}`);
     } catch (error) {

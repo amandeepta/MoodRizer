@@ -18,7 +18,7 @@ function RoomPage() {
   useEffect(() => {
     if (!accessToken) return;
 
-    const socket = io('http://localhost:4000', {
+    const socket = io('https://mood-rizer-backend.onrender.com', {
       transports: ['websocket'],
       withCredentials: true,
     });

@@ -4,27 +4,38 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const passport = require('passport');
-const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const socketHandler = require('./controllers/socket');
 const access = require('./routes/getAccess');
 const auth = require('./routes/authRoutes');
-
+const MongoStore = require('connect-mongo');
+const session = require('express-session');
 const app = express();
 
+connectDB();
+
+const mongoStore = MongoStore.create({
+  mongoUrl: process.env.DATABASE_URL,
+  collectionName: 'sessions',
+  ttl: 24 * 60 * 60,
+});
+
 app.use(cookieParser());
+
 app.use(session({
+  store: mongoStore,
   secret: process.env.SECRET || 'your-default-secret',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
 const corsOptions = {
-  origin: ['http://localhost:5173'],
+  origin: ['https://mood-rizer.vercel.app'], // Replace with your deployed frontend URL
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 };
@@ -38,14 +49,12 @@ app.use('/access', access);
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: 'https://mood-rizer.vercel.app', // Replace with your deployed frontend URL
     methods: ['GET', 'POST', 'WebSocket'],
     credentials: true,
   },
 });
 socketHandler(io);
-
-connectDB();
 
 const port = process.env.PORT || 4000;
 server.listen(port, () => console.log(`Server running on port ${port}`));

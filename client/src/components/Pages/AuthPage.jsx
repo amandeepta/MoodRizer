@@ -1,6 +1,6 @@
 function AuthPage() {
   const spotifyAuth = () => {
-    const apiUrl = "http://localhost:4000";
+    const apiUrl = "https://mood-rizer-backend.onrender.com";
     window.open(`${apiUrl}/auth/spotify`, "_self");
   };
 

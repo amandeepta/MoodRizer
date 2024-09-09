@@ -29,7 +29,7 @@ passport.use(
     {
       clientID: process.env.CLIENT_ID,
       clientSecret: process.env.CLIENT_SECRET,
-      callbackURL: 'http://localhost:4000/auth/spotify/callback',
+      callbackURL: 'https://mood-rizer-backend.onrender.com/auth/spotify/callback',
       scope: [
         'user-read-email',
         'user-read-private',
