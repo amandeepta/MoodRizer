@@ -1,14 +1,24 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import jwtDecode from 'jwt-decode';
 
 function MainPage() {
   const navigate = useNavigate();
-
+  const [accessToken, setAccessToken] = useState('');
   const fetchAccessToken = async () => {
     try {
-      const response = await axios.get('https://mood-rizer-backend.onrender.com/access/token', { withCredentials: true });
-      localStorage.setItem('accessToken', response.data.accessToken);
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      
+      if (token) {
+        const decodedToken = jwtDecode(token);
+        localStorage.setItem('accessToken', decodedToken); 
+        setAccessToken(decodedToken)// Store the JWT token
+        console.log('Token decoded:', accessToken);
+      } else {
+        console.error('No token found in URL');
+      }
     } catch (error) {
       console.error('Error fetching access token:', error.message);
     }
@@ -20,7 +30,11 @@ function MainPage() {
 
   const handleCreateRoom = async () => {
     try {
-      const response = await axios.get('https://mood-rizer-backend.onrender.com/access/create-room');
+      const response = await axios.get('https://mood-rizer-backend.onrender.com/access/create-room', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
       console.log(response.data.roomId);
       navigate(`/room/${response.data.roomId}`);
     } catch (error) {
@@ -51,11 +65,6 @@ function MainPage() {
             className="w-full py-4 px-6 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl rounded-full shadow-lg transition duration-300 transform hover:scale-105"
           >
             Join Room
-          </button>
-          <button
-            onClick={fetchAccessToken}
-          >
-            Fetch Access Token
           </button>
         </div>
       </div>
