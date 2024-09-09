@@ -25,9 +25,9 @@ router.get('/spotify', (req, res) => {
     'streaming',
     'user-read-currently-playing',
   ];
-  
+
   const authURL = `https://accounts.spotify.com/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent('https://mood-rizer-backend.onrender.com/auth/spotify/callback')}&scope=${encodeURIComponent(scope.join(' '))}`;
-  
+
   res.redirect(authURL);
 });
 
@@ -47,7 +47,7 @@ router.get('/spotify/callback', async (req, res) => {
     });
 
     const { access_token, refresh_token, expires_in } = response.data;
-    
+
     const profileResponse = await axios.get('https://api.spotify.com/v1/me', {
       headers: {
         'Authorization': `Bearer ${access_token}`
@@ -56,9 +56,9 @@ router.get('/spotify/callback', async (req, res) => {
 
     const profile = profileResponse.data;
     const expirationTime = Date.now() + expires_in * 1000;
-    
+
     let user = await User.findOne({ spotifyId: profile.id });
-    
+
     if (!user) {
       user = new User({
         spotifyId: profile.id,
@@ -78,7 +78,6 @@ router.get('/spotify/callback', async (req, res) => {
     const token = generateToken(user.accessToken);
     res.redirect(`https://mood-rizer.vercel.app/main?token=${token}`);
   } catch (err) {
-    console.error('Error during Spotify authentication:', err);
     res.redirect('/error');
   }
 });

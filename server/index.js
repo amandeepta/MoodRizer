@@ -18,8 +18,7 @@ app.set('trust proxy', 1); // Trust first proxy
 const corsOptions = {
   origin: ['https://mood-rizer.vercel.app'], // Replace with your deployed frontend URL
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  exposedHeaders: ['Set-Cookie']
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 app.use(cors(corsOptions));

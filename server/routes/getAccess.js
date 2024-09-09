@@ -49,30 +49,4 @@ router.post('/check', async (req, res) => {
 });
 
 
-router.get('/token', async (req, res) => {
-  try {
-    if (req.isAuthenticated()) {
-      const spotifyId = req.user;
-      
-      if (!spotifyId) {
-        return res.status(401).json({ success: false, message: "Spotify ID not found" });
-      }
-
-      const acc = await User.findOne({ spotifyId });
-
-      if (!acc) {
-        return res.status(401).json({ success: false, message: "User data not found" });
-      }
-
-      const token = acc.accessToken;
-      return res.json({ success: true, accessToken : token });
-    } else {
-      return res.status(401).json({ success: false, message: "User not authenticated" });
-    }
-  } catch (error) {
-    console.error('Error retrieving access token:', error);
-    return res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
 module.exports = router;
