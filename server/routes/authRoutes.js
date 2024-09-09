@@ -82,7 +82,7 @@ router.get('/spotify', passport.authenticate('spotify', {
 router.get('/spotify/callback', passport.authenticate('spotify', {
   failureRedirect: '/',
 }), (req, res) => {
-  res.redirect('http://localhost:5173/main');
+  res.redirect('https://mood-rizer.vercel.app/main');
 });
 
 router.get('/logout', (req, res) => {
