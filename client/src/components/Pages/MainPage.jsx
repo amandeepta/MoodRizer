@@ -5,15 +5,16 @@ import axios from 'axios';
 function MainPage() {
   const navigate = useNavigate();
 
+  const fetchAccessToken = async () => {
+    try {
+      const response = await axios.get('https://mood-rizer-backend.onrender.com/access/token', { withCredentials: true });
+      localStorage.setItem('accessToken', response.data.accessToken);
+    } catch (error) {
+      console.error('Error fetching access token:', error.message);
+    }
+  };
+
   useEffect(() => {
-    const fetchAccessToken = async () => {
-      try {
-        const response = await axios.get('https://mood-rizer-backend.onrender.com/access/token', { withCredentials: true });
-        localStorage.setItem('accessToken', response.data.accessToken);
-      } catch (error) {
-        console.error('Error fetching access token:', error.message);
-      }
-    };
     fetchAccessToken();
   }, []);
 
@@ -50,6 +51,11 @@ function MainPage() {
             className="w-full py-4 px-6 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl rounded-full shadow-lg transition duration-300 transform hover:scale-105"
           >
             Join Room
+          </button>
+          <button
+            onClick={fetchAccessToken}
+          >
+            Fetch Access Token
           </button>
         </div>
       </div>

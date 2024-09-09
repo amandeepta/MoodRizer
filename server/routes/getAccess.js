@@ -56,6 +56,7 @@ router.get('/token', (req, res) => {
     }
 
     const accessToken = req.user.accessToken;
+    console.log(accessToken);
 
     if (!accessToken) {
       return res.status(400).json({ success: false, message: 'Access token not found' });
