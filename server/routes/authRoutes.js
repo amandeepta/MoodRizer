@@ -28,7 +28,7 @@ router.get('/spotify', (req, res) => {
 
   const authURL = `https://accounts.spotify.com/authorize?client_id=${process.env.CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent('https://mood-rizer-backend.onrender.com/auth/spotify/callback')}&scope=${encodeURIComponent(scope.join(' '))}`;
 
-  res.redirect(authURL);
+  res.redirect(authURL + '&show_dialog=true');
 });
 
 router.get('/spotify/callback', async (req, res) => {
