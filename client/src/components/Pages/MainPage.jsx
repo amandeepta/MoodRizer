@@ -4,6 +4,7 @@ import axios from 'axios';
 
 function MainPage() {
   const navigate = useNavigate();
+
   useEffect(() => {
     const fetchAccessToken = async () => {
       try {
@@ -14,7 +15,7 @@ function MainPage() {
       }
     };
     fetchAccessToken();
-  });
+  }, []);
 
   const handleCreateRoom = async () => {
     try {
@@ -31,19 +32,22 @@ function MainPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-800">
-      <div className="text-center p-8 bg-gray-900 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-white mb-8">Welcome to the Chat App</h1>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+      <div className="p-10 bg-gray-900 bg-opacity-80 rounded-lg shadow-2xl text-center space-y-8 max-w-md">
+        <h1 className="text-4xl font-extrabold text-green-400 mb-6">Welcome to MoodRizer</h1>
+        <p className="text-gray-300 text-lg">
+          Create or join a room to enjoy music together.
+        </p>
         <div className="space-y-4">
           <button
             onClick={handleCreateRoom}
-            className="w-full py-3 px-6 font-semibold text-lg rounded-lg shadow-md focus:outline-none transition duration-300"
+            className="w-full py-4 px-6 bg-green-500 hover:bg-green-600 text-white font-bold text-xl rounded-full shadow-lg transition duration-300 transform hover:scale-105"
           >
             Create Room
           </button>
           <button
             onClick={handleJoinRoom}
-            className="w-full py-3 px-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold text-lg rounded-lg shadow-md focus:outline-none transition duration-300"
+            className="w-full py-4 px-6 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl rounded-full shadow-lg transition duration-300 transform hover:scale-105"
           >
             Join Room
           </button>

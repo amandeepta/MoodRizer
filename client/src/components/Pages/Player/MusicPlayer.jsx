@@ -6,7 +6,7 @@ const MusicPlayer = ({ play, uri, accessToken }) => {
       token={accessToken}
       uris={[uri]}
       play={play}
-      autoPlay={false} 
+      autoPlay={true} 
     />
   );
 };

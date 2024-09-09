@@ -80,10 +80,10 @@ function RoomPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-cover bg-center" style={{ backgroundImage: "url('/path/to/your/background-image.jpg')" }}>
+    <div className="flex min-h-screen bg-gradient-to-r from-blue-900 via-purple-900 to-purple-500">
       <div className="w-full flex flex-col items-center justify-center bg-black bg-opacity-70 p-8">
-        <div className="absolute top-8 left-8 p-4 bg-black bg-opacity-60 text-white rounded-lg shadow-lg w-80">
-          <h2 className="text-xl font-semibold mb-4">Users in the room:</h2>
+        <div className="absolute top-3 left-2 p-4 bg-gray-800 bg-opacity-90 text-white rounded-lg shadow-lg w-60">
+          <h2 className="text-xl font-semibold mb-4">Users in the Room:</h2>
           <ul className="list-disc pl-4">
             {users.length > 0 ? (
               users.map((user, index) => (
@@ -94,23 +94,23 @@ function RoomPage() {
             )}
           </ul>
         </div>
-        <div className="flex flex-col items-center justify-center w-full max-w-4xl bg-black bg-opacity-80 p-8 rounded-lg shadow-xl">
-          <h1 className="text-3xl font-bold text-white mb-6">Room ID: {roomId}</h1>
-          <p className="text-lg text-gray-300 mb-8">Welcome to the room. Enjoy your time here!</p>
-          <div className="mb-6">
-            <pre className="text-white whitespace-pre-wrap">{message}</pre>
+        <div className="flex flex-col items-center justify-center w-full max-w-4xl bg-gray-900 bg-opacity-90 p-10 rounded-lg shadow-2xl">
+          <h1 className="text-4xl font-extrabold text-green-400 mb-6">Room ID: {roomId}</h1>
+          <p className="text-lg text-gray-300 mb-6">Enjoy the shared music experience in the room!</p>
+          <div className="mb-4">
+            <pre className="text-white">{message}</pre>
           </div>
-          <div className="flex flex-col items-center mb-6">
+          <div className="flex flex-col items-center mb-8">
             <input
               type="text"
               value={song}
               onChange={handleInputChange}
               placeholder="Enter the song name"
-              className="p-3 text-black rounded-lg border border-gray-300 mb-4 w-80"
+              className="w-80 p-3 rounded-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 transition duration-300 mb-4"
             />
             <button
               onClick={sendSong}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition duration-300"
+              className="px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-full shadow-lg transition duration-300 transform hover:scale-105"
             >
               Send Song
             </button>
@@ -123,7 +123,7 @@ function RoomPage() {
           <div className="mb-8">
             <button
               onClick={handlePlay}
-              className="px-6 py-3 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition duration-300"
+              className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-full shadow-lg transition duration-300 transform hover:scale-105"
             >
               {play ? "Pause" : "Play"}
             </button>
