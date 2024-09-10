@@ -18,9 +18,9 @@ function MainPage() {
   
         const decodedToken = response.data.decoded;
   
-        localStorage.setItem('accessToken', decodedToken);
-        setAccessToken(decodedToken);
-        console.log('Token decoded:', decodedToken);
+        localStorage.setItem('accessToken', decodedToken.token);
+        setAccessToken(decodedToken.token);
+        console.log('Token decoded:', decodedToken.token);
       } else {
         console.error('No token found in URL');
       }
