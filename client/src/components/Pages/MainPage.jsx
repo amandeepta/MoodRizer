@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import jwtDecode from 'jwt-decode';
 
 function MainPage() {
   const navigate = useNavigate();
@@ -11,11 +10,16 @@ function MainPage() {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
-
+  
       if (token) {
-        const decodedToken = jwtDecode(token);
-        localStorage.setItem('accessToken', token);
-        setAccessToken(token);
+        const response = await axios.post('https://mood-rizer-backend.onrender.com/access/token', {
+          token
+        });
+  
+        const decodedToken = response.data.decoded;
+  
+        localStorage.setItem('accessToken', decodedToken);
+        setAccessToken(decodedToken);
         console.log('Token decoded:', decodedToken);
       } else {
         console.error('No token found in URL');
@@ -24,10 +28,10 @@ function MainPage() {
       console.error('Error fetching access token:', error.message);
     }
   };
-
+  
   useEffect(() => {
     fetchAccessToken();
-  }, []);
+  });
 
   const handleCreateRoom = async () => {
     try {
